@@ -1,0 +1,20 @@
+{
+	"AxisParams": [
+		{
+			"AxisIndex": 0,
+			"AxisUnits": 1,
+			"AxisType": 7,
+			"AxisHomeParam": {
+				"HomeMode": 16,
+				"HomeSensorIoIndex": 0,
+				"HomeSensorInvert": true,
+				"PositiveSensorIoIndex": -1,
+				"PositiveSensorInvert": false,
+				"NegativeSensorIoIndex": -1,
+				"NegativeSensorInvert": false,
+				"Acceleration": 100000,
+				"Deceleration": 1000000
+			}
+		}
+	]
+}
