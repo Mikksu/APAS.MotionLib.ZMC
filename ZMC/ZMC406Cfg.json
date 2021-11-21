@@ -1,19 +1,19 @@
 {
 	"AxisParams": [
 		{
-			"AxisIndex": 0,
-			"AxisUnits": 1,
-			"AxisType": 7,
-			"AxisHomeParam": {
-				"HomeMode": 16,
-				"HomeSensorIoIndex": 0,
-				"HomeSensorInvert": true,
-				"PositiveSensorIoIndex": -1,
-				"PositiveSensorInvert": false,
-				"NegativeSensorIoIndex": -1,
-				"NegativeSensorInvert": false,
-				"Acceleration": 100000,
-				"Deceleration": 1000000
+			"Index": 0,
+			"Units": 1,
+			"Type": 7,
+			"HomeParam": {
+				"Mode": 16,
+				"OrgIo": 0,
+				"OrgIoInv": true,
+				"PelIo": -1,
+				"PelIoInv": false,
+				"NelIo": -1,
+				"NelIoInv": false,
+				"Acc": 1000000,
+				"Dec": 1000000
 			}
 		}
 	]

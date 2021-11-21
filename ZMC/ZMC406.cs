@@ -31,7 +31,7 @@ namespace APAS.MotionLib.ZMC
         short m_cardId = 0;
         IntPtr m_cardHandle ;
 
-        CardParam m_cardParam;
+        McParam m_cardParam;
         #endregion
         
         #region Constructors
@@ -46,7 +46,7 @@ namespace APAS.MotionLib.ZMC
         public ZMC_406(string portName, int baudRate, string config, ILog logger = null) : base(portName, baudRate, logger)
         {
 
-            m_cardParam = new CardParam();
+            m_cardParam = new McParam();
 
             var configs = config.Split(',');
             if (configs.Length == 2)
@@ -139,7 +139,7 @@ namespace APAS.MotionLib.ZMC
              */
             int rtn;
             int axisMoveStatus = 0;
-            var homeParam = FindAxisParam(axis, ref m_cardParam).AxisHomeParam;
+            var homeParam = FindAxisParam(axis, ref m_cardParam).HomeParam;
 
             rtn = zmcaux.ZAux_Direct_GetIfIdle(m_cardHandle, axis, ref axisMoveStatus);
             CommandRtnCheck(rtn, "ZAux_Direct_GetIfIdle ");
@@ -147,8 +147,8 @@ namespace APAS.MotionLib.ZMC
             if (axisMoveStatus == 0)
                 throw new Exception($"轴号 {axis},运行中");
 
-            SetAcceleration(axis, homeParam.Acceleration);
-            SetDeceleration(axis, homeParam.Deceleration);
+            SetAcceleration(axis, homeParam.Acc);
+            SetDeceleration(axis, homeParam.Dec);
 
             rtn = zmcaux.ZAux_Direct_SetCreep(m_cardHandle, axis, (float)creepSpeed);
             CommandRtnCheck(rtn, "ZAux_Direct_SetCreep ");
@@ -156,7 +156,7 @@ namespace APAS.MotionLib.ZMC
             rtn = zmcaux.ZAux_Direct_SetSpeed(m_cardHandle, axis, (float)hiSpeed);
             CommandRtnCheck(rtn, "ZAux_Direct_SetSpeed ");
 
-            rtn = zmcaux.ZAux_Direct_Single_Datum(m_cardHandle, axis, homeParam.HomeMode);
+            rtn = zmcaux.ZAux_Direct_Single_Datum(m_cardHandle, axis, homeParam.Mode);
             CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Direct_Single_Datum));
 
             Thread.Sleep(100);
@@ -771,7 +771,7 @@ namespace APAS.MotionLib.ZMC
             throw new Exception($"{axisIndex} 号轴状态异常，{statueErrorInfo}");
         }
 
-        private void ReadParamFile(string filePath, ref CardParam cardParam)
+        private void ReadParamFile(string filePath, ref McParam cardParam)
 		{
             if(!File.Exists(filePath))
 			{
@@ -780,7 +780,7 @@ namespace APAS.MotionLib.ZMC
             string jsonInfo=   File.ReadAllText(filePath);
             try
 			{
-                cardParam = JsonConvert.DeserializeObject<CardParam>(jsonInfo);
+                cardParam = JsonConvert.DeserializeObject<McParam>(jsonInfo);
             }
             catch (FormatException ex)
 			{
@@ -789,62 +789,62 @@ namespace APAS.MotionLib.ZMC
 
 		}
 
-        private void LoadParam(IntPtr cardHandle, CardParam cardParam)
+        private void LoadParam(IntPtr cardHandle, McParam cardParam)
 		{
             int rtn;
             foreach (var mem in cardParam.AxisParams)
             {
-                if (mem.AxisIndex < 0)
+                if (mem.Index < 0)
                 {
                     break;
                 }
-                if (mem.AxisType > 0)
+                if (mem.Type > 0)
                 {
-                    rtn = zmcaux.ZAux_Direct_SetAtype(cardHandle, mem.AxisIndex, mem.AxisType);
+                    rtn = zmcaux.ZAux_Direct_SetAtype(cardHandle, mem.Index, mem.Type);
                     CommandRtnCheck(rtn, "ZAux_Direct_SetAtype in LoadParam Function");
                 }
 
-                if (mem.AxisUnits > 0)
+                if (mem.Units > 0)
                 {
-                    rtn = zmcaux.ZAux_Direct_SetUnits(cardHandle, mem.AxisIndex, mem.AxisUnits);
+                    rtn = zmcaux.ZAux_Direct_SetUnits(cardHandle, mem.Index, mem.Units);
                     CommandRtnCheck(rtn, "ZAux_Direct_SetUnits in LoadParam Function");
                 }
 
-                if (mem.AxisHomeParam.HomeSensorIoIndex >= -1)
+                if (mem.HomeParam.OrgIo >= -1)
                 {
-                    rtn = zmcaux.ZAux_Direct_SetDatumIn(cardHandle, mem.AxisIndex, mem.AxisHomeParam.HomeSensorIoIndex);
+                    rtn = zmcaux.ZAux_Direct_SetDatumIn(cardHandle, mem.Index, mem.HomeParam.OrgIo);
                     CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Direct_SetDatumIn));
                 }
-                if (mem.AxisHomeParam.HomeSensorInvert)
+                if (mem.HomeParam.OrgIoInv)
                 {
-                    rtn = zmcaux.ZAux_Direct_SetInvertIn(cardHandle, mem.AxisHomeParam.HomeSensorIoIndex, 1);
+                    rtn = zmcaux.ZAux_Direct_SetInvertIn(cardHandle, mem.HomeParam.OrgIo, 1);
                 }
 
-                if (mem.AxisHomeParam.PositiveSensorIoIndex >= -1)
+                if (mem.HomeParam.PelIo >= -1)
                 {
-                    rtn = zmcaux.ZAux_Direct_SetFwdIn(cardHandle, mem.AxisIndex, mem.AxisHomeParam.PositiveSensorIoIndex);
+                    rtn = zmcaux.ZAux_Direct_SetFwdIn(cardHandle, mem.Index, mem.HomeParam.PelIo);
                     CommandRtnCheck(rtn, "ZAux_Direct_SetFwdIn in LoadParam Function");
                 }
-                if (mem.AxisHomeParam.PositiveSensorInvert)
+                if (mem.HomeParam.PelIoInv)
                 {
-                    rtn = zmcaux.ZAux_Direct_SetInvertIn(cardHandle, mem.AxisHomeParam.PositiveSensorIoIndex, 1);
+                    rtn = zmcaux.ZAux_Direct_SetInvertIn(cardHandle, mem.HomeParam.PelIo, 1);
                 }
 
-                if (mem.AxisHomeParam.NegativeSensorIoIndex >= -1)
+                if (mem.HomeParam.NelIo >= -1)
                 {
-                    rtn = zmcaux.ZAux_Direct_SetRevIn(cardHandle, mem.AxisIndex, mem.AxisHomeParam.NegativeSensorIoIndex);
+                    rtn = zmcaux.ZAux_Direct_SetRevIn(cardHandle, mem.Index, mem.HomeParam.NelIo);
                     CommandRtnCheck(rtn, "ZAux_Direct_SetFwdIn in LoadParam Function");
                 }
-                if (mem.AxisHomeParam.NegativeSensorInvert)
+                if (mem.HomeParam.NelIoInv)
                 {
-                    rtn = zmcaux.ZAux_Direct_SetInvertIn(cardHandle, mem.AxisHomeParam.NegativeSensorIoIndex, 1);
+                    rtn = zmcaux.ZAux_Direct_SetInvertIn(cardHandle, mem.HomeParam.NelIo, 1);
                 }
             }
 		}
 
-        private AxisParam FindAxisParam(int axis, ref CardParam cardParam)
+        private AxisParam FindAxisParam(int axis, ref McParam cardParam)
 		{
-            var param = cardParam.AxisParams.FirstOrDefault(x => x.AxisIndex == axis);
+            var param = cardParam.AxisParams.FirstOrDefault(x => x.Index == axis);
             if (param == null)
                 throw new NullReferenceException($"无法在文件{_configFileAxis}中找到轴{axis}的配置参数。");
 
