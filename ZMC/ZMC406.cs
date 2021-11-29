@@ -563,8 +563,8 @@ namespace APAS.MotionLib.ZMC
 
             // 总采样点数，注意此值必须为2的倍数
             int totalSamplingPoints = _mcConfig.Scope.Deepth * 2;
-            if (totalSamplingPoints < 2000)
-                totalSamplingPoints = 2000;
+            /*if (totalSamplingPoints < 20000)
+                totalSamplingPoints = 20000;*/
 
             // 采样间隔，单位ms
             // 注意：此值和上述值共同决定了能够采样的最大时间，例如1000(点) * 5ms = 5000ms
@@ -586,17 +586,20 @@ namespace APAS.MotionLib.ZMC
             zmcaux.ZAux_Direct_GetTable(_hMc, 0, totalSamplingPoints, pBuf);
 
             // AIN采样值所在的位置
-            int startAin = totalSamplingPoints / 2;
+            int startAin = _mcConfig.Scope.Deepth;
             for (int i = 0; i < pCnt; i++)
 			{
                 point2Ds.Add(new Point2D(pBuf[i], pBuf[i + startAin]));
 
-                // 如果下个点的坐标和当前点的坐标相同，则表明后续的采样点的位置不再变化，直接退出
+               /* // 如果下个点的坐标和当前点的坐标相同，则表明后续的采样点的位置不再变化，直接退出
                 if ((i < pCnt - 1) && (pBuf[i + 1] == pBuf[i]))
-                    break;
+                    break;*/
             }
 
-            scanResult = point2Ds;
+            var distinctItems = point2Ds.GroupBy(p => p.X).Select(p => p.First()).OrderBy(p => p.X);
+
+            scanResult = distinctItems;
+
         }
 
         /// <summary>
@@ -614,7 +617,54 @@ namespace APAS.MotionLib.ZMC
             int analogCapture,
             out IEnumerable<Point2D> scanResult, int analogCapture2, out IEnumerable<Point2D> scanResult2)
         {
-            throw new NotSupportedException();
+            var point2Ds1 = new List<Point2D>();
+            var point2Ds2 = new List<Point2D>();
+
+            StringBuilder respon = new StringBuilder();
+
+            // 总采样点数，注意此值必须为2的倍数
+            int totalSamplingPoints = _mcConfig.Scope.Deepth * 3;
+            /*if (totalSamplingPoints < 30000)
+                totalSamplingPoints = 30000;*/
+
+            // 采样间隔，单位ms
+            // 注意：此值和上述值共同决定了能够采样的最大时间，例如1000(点) * 5ms = 5000ms
+            int samplingIntervalMs = _mcConfig.Scope.InvtervalMs;
+            if (samplingIntervalMs < 1)
+                samplingIntervalMs = 1;
+
+            var command = 
+                $"SCOPE(ON,{samplingIntervalMs},0,{totalSamplingPoints},MPOS({axis})," +
+                $"AIN({analogCapture + _mcConfig.Ain.IndexStart})," +
+                $"AIN({analogCapture2 + _mcConfig.Ain.IndexStart}))";
+            zmcaux.ZAux_Execute(_hMc, command, respon, 100);
+            zmcaux.ZAux_Trigger(_hMc);
+            Move(axis, speed, range);
+            zmcaux.ZAux_Execute(_hMc, $"SCOPE_POS(OFF)", respon, 100);
+            zmcaux.ZAux_Execute(_hMc, $"?SCOPE_POS", respon, 100);
+
+            if (!int.TryParse(respon.ToString(), out var pCnt))
+                throw new Exception("无法获取采样的数据点总数。");
+
+            var pBuf = new float[totalSamplingPoints];
+            zmcaux.ZAux_Direct_GetTable(_hMc, 0, totalSamplingPoints, pBuf);
+
+            // AIN采样值所在的位置
+            int startAin1 = _mcConfig.Scope.Deepth;
+            int startAin2 = _mcConfig.Scope.Deepth * 2;
+            for (int i = 0; i < pCnt; i++)
+            {
+                point2Ds1.Add(new Point2D(pBuf[i], pBuf[i + startAin1]));
+                point2Ds2.Add(new Point2D(pBuf[i], pBuf[i + startAin2]));
+            }
+
+            var distinctItems1 = point2Ds1.GroupBy(p => p.X).Select(p => p.First()).OrderBy(p => p.X);
+            var distinctItems2 = point2Ds2.GroupBy(p => p.X).Select(p => p.First()).OrderBy(p => p.X);
+
+            scanResult = distinctItems1;
+            scanResult2 = distinctItems2;
+
+
         }
 
         /// <summary>
@@ -946,7 +996,37 @@ namespace APAS.MotionLib.ZMC
             SetDeceleration(0, 5000000);
             Move(0, 100000, 200000);
 
-            StartFast1D(0, 10000, 10, 100000, 0, out var points);
+            StartFast1D(0, 100000, 10, 50000, 0, out var pBuf);
+
+            var sb = new StringBuilder();
+            pBuf.ToList().ForEach(p =>
+            {
+                sb.AppendLine($"{p.X}\t{p.Y}");
+            });
+
+            var ss = sb.ToString();
+
+
+            Move(0, 100000, -100000);
+
+            StartFast1D(0, 100000, 10, 50000, 1, out var pBuf1, 0, out var pBuf2);
+
+
+            var sb1 = new StringBuilder();
+            var sb2 = new StringBuilder();
+            pBuf1.ToList().ForEach(p =>
+            {
+                sb1.AppendLine($"{p.X}\t{p.Y}");
+            });
+
+            pBuf2.ToList().ForEach(p =>
+            {
+                sb2.AppendLine($"{p.X}\t{p.Y}");
+            });
+
+            var ss1 = sb1.ToString();
+            var ss2 = sb2.ToString();
+
 
             ServoOff(0);
 

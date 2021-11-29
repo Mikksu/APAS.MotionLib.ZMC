@@ -12,6 +12,6 @@ namespace APAS.MotionLib.ZMC.Configuration
 		/// <summary>
 		/// 采样深度
 		/// </summary>
-		public int Deepth { get; set; } = 1000;
+		public int Deepth { get; set; } = 10000;
 	}
 }

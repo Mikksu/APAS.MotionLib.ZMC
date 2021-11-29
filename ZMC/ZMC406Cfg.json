@@ -1,7 +1,10 @@
 {
 	"Scope": {
-		"InvtervalMs": 5,
-		"Deepth": 1000
+		"InvtervalMs": 10,
+		"mmInvtervalMs": "采样时间间隔，单位ms",
+		"Deepth": 10000,
+		"mmDeepth1": "Deepth为采样深度，该值仅用于约束最大采样点数，实际的采样点数与速度和运动距离相关",
+		"mmDeepth2": "Fast1D算法中实际需要的缓冲区数量为Deepth*2或Deepth*3个，因此该值不应超过 轴卡最大缓冲区长度/3"
 	},
 		"AIN": {
 			"IndexStart": 32,
