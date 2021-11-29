@@ -43,8 +43,8 @@ namespace APAS.MotionLib.ZMC
         /// </summary>
         /// <param name="portName"></param>
         /// <param name="baudRate"></param>
+        /// <param name="config"></param>
         /// <param name="logger"></param>
-
         public ZMC_406(string portName, int baudRate, string config, ILog logger = null) : base(portName, baudRate, logger)
         {
             var configs = config.Split(',');
@@ -298,7 +298,7 @@ namespace APAS.MotionLib.ZMC
         {
             CheckAxisIdle(axis);
 
-            int rtn = zmcaux.ZAux_Direct_SetOp(_hMc, 12 + axis, 0);
+            var rtn = zmcaux.ZAux_Direct_SetOp(_hMc, 12 + axis, 0);
             CommandRtnCheck(rtn, "ZAux_Direct_SetOp ");
         }
 
@@ -557,49 +557,7 @@ namespace APAS.MotionLib.ZMC
         protected override void ChildStartFast1D(int axis, double range, double interval, double speed,
             int analogCapture, out IEnumerable<Point2D> scanResult)
         {
-            var point2Ds = new List<Point2D>();
-
-            StringBuilder respon = new StringBuilder();
-
-            // 总采样点数，注意此值必须为2的倍数
-            int totalSamplingPoints = _mcConfig.Scope.Deepth * 2;
-            /*if (totalSamplingPoints < 20000)
-                totalSamplingPoints = 20000;*/
-
-            // 采样间隔，单位ms
-            // 注意：此值和上述值共同决定了能够采样的最大时间，例如1000(点) * 5ms = 5000ms
-            int samplingIntervalMs = _mcConfig.Scope.InvtervalMs;
-            if (samplingIntervalMs < 1)
-                samplingIntervalMs = 1;
-
-            var command = $"SCOPE(ON,{samplingIntervalMs},0,{totalSamplingPoints},MPOS({axis}),AIN({analogCapture + _mcConfig.Ain.IndexStart}))";
-            zmcaux.ZAux_Execute(_hMc, command, respon, 100);
-            zmcaux.ZAux_Trigger(_hMc);
-            Move(axis, speed, range);
-            zmcaux.ZAux_Execute(_hMc, $"SCOPE_POS(OFF)", respon, 100);
-            zmcaux.ZAux_Execute(_hMc, $"?SCOPE_POS", respon, 100);
-
-            if (!int.TryParse(respon.ToString(), out var pCnt))
-                throw new Exception("无法获取采样的数据点总数。");
-
-            var pBuf = new float[totalSamplingPoints];
-            zmcaux.ZAux_Direct_GetTable(_hMc, 0, totalSamplingPoints, pBuf);
-
-            // AIN采样值所在的位置
-            int startAin = _mcConfig.Scope.Deepth;
-            for (int i = 0; i < pCnt; i++)
-			{
-                point2Ds.Add(new Point2D(pBuf[i], pBuf[i + startAin]));
-
-               /* // 如果下个点的坐标和当前点的坐标相同，则表明后续的采样点的位置不再变化，直接退出
-                if ((i < pCnt - 1) && (pBuf[i + 1] == pBuf[i]))
-                    break;*/
-            }
-
-            var distinctItems = point2Ds.GroupBy(p => p.X).Select(p => p.First()).OrderBy(p => p.X);
-
-            scanResult = distinctItems;
-
+           ChildStartFast1D(axis, range, interval, speed, analogCapture, out scanResult, -1, out _);
         }
 
         /// <summary>
@@ -614,16 +572,18 @@ namespace APAS.MotionLib.ZMC
         /// <param name="analogCapture2">第2路反馈信号采样间隔</param>
         /// <param name="scanResult2">第2路扫描结果列表（X:位置，Y:反馈信号）</param>
         protected override void ChildStartFast1D(int axis, double range, double interval, double speed,
-            int analogCapture,
-            out IEnumerable<Point2D> scanResult, int analogCapture2, out IEnumerable<Point2D> scanResult2)
+            int analogCapture, out IEnumerable<Point2D> scanResult, int analogCapture2, out IEnumerable<Point2D> scanResult2)
         {
+            scanResult = null;
+            scanResult2 = null;
+
             var point2Ds1 = new List<Point2D>();
             var point2Ds2 = new List<Point2D>();
 
-            StringBuilder respon = new StringBuilder();
+            var respon = new StringBuilder();
 
             // 总采样点数，注意此值必须为2的倍数
-            int totalSamplingPoints = _mcConfig.Scope.Deepth * 3;
+            var totalSamplingPoints = _mcConfig.Scope.Deepth * (analogCapture2 < 0 ? 2 : 3);
             /*if (totalSamplingPoints < 30000)
                 totalSamplingPoints = 30000;*/
 
@@ -633,10 +593,21 @@ namespace APAS.MotionLib.ZMC
             if (samplingIntervalMs < 1)
                 samplingIntervalMs = 1;
 
-            var command = 
-                $"SCOPE(ON,{samplingIntervalMs},0,{totalSamplingPoints},MPOS({axis})," +
-                $"AIN({analogCapture + _mcConfig.Ain.IndexStart})," +
-                $"AIN({analogCapture2 + _mcConfig.Ain.IndexStart}))";
+            var command = "";
+            if (analogCapture2 < 0)
+            {
+                command =
+                    $"SCOPE(ON,{samplingIntervalMs},0,{totalSamplingPoints},MPOS({axis})," +
+                    $"AIN({analogCapture + _mcConfig.Ain.IndexStart}))";
+            }
+            else
+            {
+                command =
+                    $"SCOPE(ON,{samplingIntervalMs},0,{totalSamplingPoints},MPOS({axis})," +
+                    $"AIN({analogCapture + _mcConfig.Ain.IndexStart})," +
+                    $"AIN({analogCapture2 + _mcConfig.Ain.IndexStart}))";
+                
+            }
             zmcaux.ZAux_Execute(_hMc, command, respon, 100);
             zmcaux.ZAux_Trigger(_hMc);
             Move(axis, speed, range);
@@ -646,25 +617,37 @@ namespace APAS.MotionLib.ZMC
             if (!int.TryParse(respon.ToString(), out var pCnt))
                 throw new Exception("无法获取采样的数据点总数。");
 
-            var pBuf = new float[totalSamplingPoints];
-            zmcaux.ZAux_Direct_GetTable(_hMc, 0, totalSamplingPoints, pBuf);
+            var startAin1 = _mcConfig.Scope.Deepth;
+            var startAin2 = _mcConfig.Scope.Deepth * 2;
+
+            var pBufX = new float[_mcConfig.Scope.Deepth];
+            var pBufY1 = new float[_mcConfig.Scope.Deepth];
+            var pBufY2 = new float[_mcConfig.Scope.Deepth];
+
+            zmcaux.ZAux_Direct_GetTable(_hMc, 0, pCnt, pBufX);
+            zmcaux.ZAux_Direct_GetTable(_hMc, startAin1, pCnt, pBufY1);
+
+            if(analogCapture2 >=0)
+                zmcaux.ZAux_Direct_GetTable(_hMc, startAin2, pCnt, pBufY2);
 
             // AIN采样值所在的位置
-            int startAin1 = _mcConfig.Scope.Deepth;
-            int startAin2 = _mcConfig.Scope.Deepth * 2;
-            for (int i = 0; i < pCnt; i++)
+            
+            for (var i = 0; i < pCnt; i++)
             {
-                point2Ds1.Add(new Point2D(pBuf[i], pBuf[i + startAin1]));
-                point2Ds2.Add(new Point2D(pBuf[i], pBuf[i + startAin2]));
+                point2Ds1.Add(new Point2D(pBufX[i], pBufY1[i]));
+
+                if (analogCapture2 >= 0)
+                    point2Ds2.Add(new Point2D(pBufX[i], pBufX[i]));
             }
 
             var distinctItems1 = point2Ds1.GroupBy(p => p.X).Select(p => p.First()).OrderBy(p => p.X);
-            var distinctItems2 = point2Ds2.GroupBy(p => p.X).Select(p => p.First()).OrderBy(p => p.X);
-
             scanResult = distinctItems1;
-            scanResult2 = distinctItems2;
 
-
+            if (analogCapture2 >= 0)
+            {
+                var distinctItems2 = point2Ds2.GroupBy(p => p.X).Select(p => p.First()).OrderBy(p => p.X);
+                scanResult2 = distinctItems2;
+            }
         }
 
         /// <summary>
@@ -996,7 +979,7 @@ namespace APAS.MotionLib.ZMC
             SetDeceleration(0, 5000000);
             Move(0, 100000, 200000);
 
-            StartFast1D(0, 100000, 10, 50000, 0, out var pBuf);
+            StartFast1D(0, 400, 1, 50000, 0, out var pBuf);
 
             var sb = new StringBuilder();
             pBuf.ToList().ForEach(p =>
