@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Linq;
 using APAS.MotionLib.ZMC.Configuration;
 using System.Text;
+using System.Threading.Tasks;
 
 /*
  注意：
@@ -39,6 +40,8 @@ namespace APAS.MotionLib.ZMC
         private IntPtr _hMc;
 
         private McConfig _mcConfig;
+
+        private CancellationTokenSource _cts;
 
         #endregion
         
@@ -107,9 +110,12 @@ namespace APAS.MotionLib.ZMC
                 AxisCount = 12;
 
             ApplyConfig(_hMc, _mcConfig);
-
+            
+            // Servo On 所有轴
             for (var i = 0; i < AxisCount; i++)
                 ChildServoOn(i);
+
+            StartBackgroundTask();
         }
 
         /// <summary>
@@ -193,7 +199,7 @@ namespace APAS.MotionLib.ZMC
             CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Direct_SetDpos));
 
             // 将该轴标记为已Home
-            rtn = zmcaux.ZAux_Modbus_Set0x(_hMc, 0, 1, new byte[] { 1 });
+            rtn = zmcaux.ZAux_Modbus_Set0x(_hMc, (ushort)axis, 1, new byte[] { 1 });
             CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Modbus_Set0x));
 
             RaiseAxisStateUpdatedEvent(new AxisStatusArgs(axis, 0, true));
@@ -343,6 +349,13 @@ namespace APAS.MotionLib.ZMC
             // 2. 实例化 AxisStatusArgs 时请传递所有参数。
             // RaiseAxisStateUpdatedEvent(new AxisStatusArgs(int.MinValue, double.NaN, false, false));
 
+            var isHomed = new byte[1];
+            var rtn = zmcaux.ZAux_Modbus_Get0x(_hMc, (ushort)axis, 1, isHomed);
+            CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Modbus_Get0x));
+
+            var absPos = ChildUpdateAbsPosition(axis);
+            var isServoOn = ChildReadDigitalOutput(IO_BASE_SERVO_ONOFF + axis);
+            RaiseAxisStateUpdatedEvent(new AxisStatusArgs(axis, absPos, isHomed[0] != 0, isServoOn));
         }
 
         /// <summary>
@@ -356,11 +369,17 @@ namespace APAS.MotionLib.ZMC
             //    例如对于 8 轴轴卡，请调用针对8个轴调用 8 次 RaiseAxisStateUpdatedEvent 函数。
             // 2. 实例化 AxisStatusArgs 时请传递所有参数。
             //// RaiseAxisStateUpdatedEvent(new AxisStatusArgs(int.MinValue, double.NaN, false, false));
-
-
+            // 检查IsHomed状态
+           /* var isHomed = new byte[AxisCount];
+            var rtn = zmcaux.ZAux_Modbus_Get0x(_hMc, (ushort)0, (ushort)AxisCount, isHomed);
+            CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Modbus_Get0x));*/
+            
+            for (var i = 0; i < AxisCount; i++)
+            {
+                ChildUpdateStatus(i);
+            }
         }
-
-
+        
         /// <summary>
         /// 清除指定轴的错误。
         /// </summary>
@@ -706,13 +725,17 @@ namespace APAS.MotionLib.ZMC
             }
         }
 
-		/// <summary>
-		/// 关闭运动控制器，并销毁运动控制器实例。
-		/// </summary>
-		protected override void ChildDispose()
+        /// <summary>
+        /// 关闭运动控制器，并销毁运动控制器实例。
+        /// </summary>
+        protected override void ChildDispose()
         {
-          var rtn=  zmcaux.ZAux_Close(_hMc);
-          CommandRtnCheck(rtn, "ZAux_Close");
+            // kill the background task
+            _cts?.Cancel();
+            Thread.Sleep(1000);
+
+            var rtn = zmcaux.ZAux_Close(_hMc);
+            CommandRtnCheck(rtn, "ZAux_Close");
         }
 
         /// <summary>
@@ -997,6 +1020,26 @@ namespace APAS.MotionLib.ZMC
 
             return param;
 		}
+
+        private void StartBackgroundTask()
+        {
+            _cts = new CancellationTokenSource();
+            var ct = _cts.Token;
+
+            Task.Run(() =>
+            {
+                Thread.Sleep(2000);
+
+                while (true)
+                {
+                    UpdateStatus();
+                    Thread.Sleep(200);
+
+                    if (ct.IsCancellationRequested)
+                        break;
+                }
+            });
+        }
 
 
         public void UnitTest()
