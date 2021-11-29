@@ -27,6 +27,11 @@ namespace APAS.MotionLib.ZMC
     {
         #region Variables
 
+        /// <summary>
+        /// 控制Servo-On/Off的Io起始编号
+        /// </summary>
+        private const int IO_BASE_SERVO_ONOFF = 12;
+
         private readonly string _configFileGts = "";
         private readonly string _configFileAxis = "ZMC406Cfg.json";
 
@@ -34,6 +39,7 @@ namespace APAS.MotionLib.ZMC
         private IntPtr _hMc;
 
         private McConfig _mcConfig;
+
         #endregion
         
         #region Constructors
@@ -86,16 +92,24 @@ namespace APAS.MotionLib.ZMC
 
             //TODO 4.需要完成函数 ChildUpdateStatus()，否则会报NotImplementException异常。
 
-            int rtn = zmcaux.ZAux_SearchEth(PortName, 100);
+            var rtn = zmcaux.ZAux_SearchEth(PortName, 100);
 
             CommandRtnCheck(rtn, "ZAux_SearchEth");
-
-
+            
             rtn = zmcaux.ZAux_OpenEth(PortName, out _hMc);
             CommandRtnCheck(rtn, "ZAux_OpenEth");
 
+            // 检查轴卡型号并更新轴总数
+            var model = SendBasicCommand("?control");
+            if (model.StartsWith("406"))
+                AxisCount = 6;
+            else if (model.StartsWith("412"))
+                AxisCount = 12;
+
             ApplyConfig(_hMc, _mcConfig);
 
+            for (var i = 0; i < AxisCount; i++)
+                ChildServoOn(i);
         }
 
         /// <summary>
@@ -105,6 +119,7 @@ namespace APAS.MotionLib.ZMC
         /// <param name="acc">加速度值</param>
         protected override void ChildSetAcceleration(int axis, double acc)
         {
+            CheckAxisIdle(axis);
 
             int rtn = zmcaux.ZAux_Direct_SetAccel(_hMc, axis, (float)acc);
             CommandRtnCheck(rtn, "ZAux_Direct_SetAccel  in ChildSetAcceleration");
@@ -117,6 +132,8 @@ namespace APAS.MotionLib.ZMC
         /// <param name="dec">减速度值</param>
         protected override void ChildSetDeceleration(int axis, double dec)
         {
+            CheckAxisIdle(axis);
+
             int rtn = zmcaux.ZAux_Direct_SetDecel(_hMc, axis, (float)dec);
             CommandRtnCheck(rtn, "ZAux_Direct_SetDecel  in ChildSetAcceleration");
         }
@@ -285,9 +302,8 @@ namespace APAS.MotionLib.ZMC
         /// <param name="axis">轴号</param>
         protected override void ChildServoOn(int axis)
         {
-           int rtn= zmcaux.ZAux_Direct_SetOp(_hMc, 12 + axis, 1);
-            CommandRtnCheck(rtn, "ZAux_Direct_SetOp ");
-
+            CheckAxisIdle(axis, false);
+            ChildSetDigitalOutput(IO_BASE_SERVO_ONOFF + axis, true);
         }
 
         /// <summary>
@@ -296,10 +312,8 @@ namespace APAS.MotionLib.ZMC
         /// <param name="axis">轴号</param>
         protected override void ChildServoOff(int axis)
         {
-            CheckAxisIdle(axis);
-
-            var rtn = zmcaux.ZAux_Direct_SetOp(_hMc, 12 + axis, 0);
-            CommandRtnCheck(rtn, "ZAux_Direct_SetOp ");
+            CheckAxisIdle(axis, false);
+            ChildSetDigitalOutput(IO_BASE_SERVO_ONOFF + axis, false);
         }
 
         /// <summary>
@@ -674,7 +688,7 @@ namespace APAS.MotionLib.ZMC
         protected override void ChildStop()
         {
             int rtn;
-            for (int i = 0; i < AxisCount; i++)
+            for (var i = 0; i < AxisCount; i++)
             {
                 rtn = zmcaux.ZAux_Direct_Single_Cancel(_hMc, i, 0);
                 //CommandRtnCheck(rtn, "ZAux_Direct_Single_Cancel");
@@ -685,7 +699,7 @@ namespace APAS.MotionLib.ZMC
 		protected override void ChildEmergencyStop()
 		{
             int rtn;
-            for (int i = 0; i < AxisCount; i++)
+            for (var i = 0; i < AxisCount; i++)
             {
                 rtn = zmcaux.ZAux_Direct_Single_Cancel(_hMc, i, 3);
                 //CommandRtnCheck(rtn, "ZAux_Direct_Single_Cancel");
@@ -697,9 +711,8 @@ namespace APAS.MotionLib.ZMC
 		/// </summary>
 		protected override void ChildDispose()
         {
-          int rtn=  zmcaux.ZAux_Close(_hMc);
-            CommandRtnCheck(rtn, "ZAux_Close");
-
+          var rtn=  zmcaux.ZAux_Close(_hMc);
+          CommandRtnCheck(rtn, "ZAux_Close");
         }
 
         /// <summary>
@@ -718,7 +731,6 @@ namespace APAS.MotionLib.ZMC
         protected override void CheckController()
         {
             base.CheckController(); // 请勿删除该行。
-
         }
 
 
@@ -726,7 +738,7 @@ namespace APAS.MotionLib.ZMC
 
 		private void CommandRtnCheck(int rtnValue, [CallerMemberName] string funcName = "")
         {
-            string errorInfo = string.Empty;
+            var errorInfo = string.Empty;
             switch (rtnValue)
             {
                 case 0:
@@ -867,22 +879,23 @@ namespace APAS.MotionLib.ZMC
         }
 
         private void ReadParamFile(string filePath, ref McConfig cardParam)
-		{
-            if(!File.Exists(filePath))
-			{
+        {
+            if (!File.Exists(filePath))
+            {
                 return;
-			}
-            string jsonInfo=   File.ReadAllText(filePath);
+            }
+
+            var jsonInfo = File.ReadAllText(filePath);
             try
-			{
+            {
                 cardParam = JsonConvert.DeserializeObject<McConfig>(jsonInfo);
             }
-            catch (FormatException ex)
-			{
+            catch (FormatException)
+            {
                 throw new Exception($"{filePath} ,配置文件加载异常");
-			}
+            }
 
-		}
+        }
 
         /// <summary>
         /// 应用配置文件对轴卡进行配置
@@ -942,28 +955,45 @@ namespace APAS.MotionLib.ZMC
             }
 		}
 
+        private string SendBasicCommand(string command)
+        {
+            var resp = new StringBuilder();
+            zmcaux.ZAux_Execute(_hMc, command, resp, 100);
+
+            return resp.ToString();
+        }
+
         /// <summary>
         /// 检查轴是否空闲
         /// </summary>
         /// <param name="axis"></param>
-        private void CheckAxisIdle(int axis)
+        /// <param name="isCheckServoOn"></param>
+        private void CheckAxisIdle(int axis, bool isCheckServoOn = true)
 		{
-            int axisMoveStatus = 0;
+            var axisMoveStatus = 0;
             var rtn = zmcaux.ZAux_Direct_GetIfIdle(_hMc, axis, ref axisMoveStatus);
-            CommandRtnCheck(rtn, "ZAux_Direct_GetIfIdle ");
+            CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Direct_GetIfIdle));
 
             if (axisMoveStatus == 0)
             {
-                throw new Exception($"轴号 {axis},运行中");
+                throw new Exception($"轴[{axis}]正在运动。");
+            }
+            
+            // 检查Servo-On是否打开
+            if (isCheckServoOn)
+            {
+                var sta = ChildReadDigitalOutput(IO_BASE_SERVO_ONOFF + axis);
+
+                if (sta == false)
+                    throw new Exception($"轴[{axis}]未使能。");
             }
         }
-
 
         private AxisConfig FindAxisConfig(int axis, ref McConfig cardParam)
 		{
             var param = cardParam.Axes.FirstOrDefault(x => x.Index == axis);
             if (param == null)
-                throw new NullReferenceException($"无法在文件{_configFileAxis}中找到轴{axis}的配置参数。");
+                throw new NullReferenceException($"无法在文件{_configFileAxis}中找到轴[{axis}]的配置参数。");
 
             return param;
 		}
