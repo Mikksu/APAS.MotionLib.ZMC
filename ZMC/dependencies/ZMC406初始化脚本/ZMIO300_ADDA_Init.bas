@@ -1,0 +1,13 @@
+'连接ZMIO300——ADDA扩展模块
+SLOT_SCAN(0)
+?RETURN
+?"node num " NODE_COUNT(0)
+NODE_AIO(0,0)=32
+?"node 0 start aio " NODE_AIO(0,0)
+SLOT_START(0)
+?RETURN
+
+
+'量程设置到0V-5V
+SDO_WRITE(0,0,$5001,1,6,6)
+

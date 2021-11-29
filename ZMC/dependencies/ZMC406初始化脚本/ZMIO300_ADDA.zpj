@@ -1,0 +1,17 @@
+[Controller]
+TypeName=
+IfUpload=0
+UserVersion=1.0
+Files=2
+Breaks=0
+Watches=0
+[FileList]
+File1=ZMIO300_ADDA_Init.bas
+FileType1=1
+AutoRun1=0
+File2=Init.bas
+FileType2=1
+AutoRun2=1
+[OpenList]
+OpenFile1=ZMIO300_ADDA_Init.bas
+OpenLine1=0

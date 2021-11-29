@@ -590,6 +590,10 @@ namespace APAS.MotionLib.ZMC
             for (int i = 0; i < pCnt; i++)
 			{
                 point2Ds.Add(new Point2D(pBuf[i], pBuf[i + startAin]));
+
+                // 如果下个点的坐标和当前点的坐标相同，则表明后续的采样点的位置不再变化，直接退出
+                if ((i < pCnt - 1) && (pBuf[i + 1] == pBuf[i]))
+                    break;
             }
 
             scanResult = point2Ds;
