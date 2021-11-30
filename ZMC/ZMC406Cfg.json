@@ -16,12 +16,33 @@
 				"Units": 1,
 				"Type": 4,
 				"mmType": "AType: 1 for stepper, 4 for servo motor with ENC feedback.",
+				"InvertStep":0,
 				"ResetIo": 0,
 				"Home": {
 					"Mode": 16,
 					"OrgIo": 0,
 					"OrgIoInv": true,
 					"PelIo": -1,
+					"PelIoInv": false,
+					"NelIo": -1,
+					"NelIoInv": false,
+					"Acc": 1000000,
+					"Dec": 1000000
+				}
+			},
+			{
+				"Index": 1,
+				"Units": 1,
+				"Type": 7,
+				"mmType": "AType: 1 for stepper, 4 for servo motor with ENC feedback.",
+				"InvertStep":6,
+				"ResetIo": 0,
+				"Home": {
+					"Mode": 14,
+					"mmMode":"步进驱动器只能用14，因为其Z相信号输出为单端模式。",
+					"OrgIo": 2,
+					"OrgIoInv":  false,
+					"PelIo": 3,
 					"PelIoInv": false,
 					"NelIo": -1,
 					"NelIoInv": false,

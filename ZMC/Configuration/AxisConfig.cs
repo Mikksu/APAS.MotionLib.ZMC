@@ -19,6 +19,12 @@
 
 
 		/// <summary>
+		/// 脉冲模式设置
+		/// </summary>
+		public int InvertStep { get; set; } = 0;
+
+
+		/// <summary>
 		/// 应用于复位伺服驱动器的输出IO。
 		/// </summary>
 		public int ResetIo { get; set; } = -1;
