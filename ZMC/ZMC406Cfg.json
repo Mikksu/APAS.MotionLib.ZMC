@@ -44,7 +44,7 @@
 					"OrgIoInv":  false,
 					"PelIo": 3,
 					"PelIoInv": false,
-					"NelIo": -1,
+					"NelIo": 2,
 					"NelIoInv": false,
 					"Acc": 1000000,
 					"Dec": 1000000

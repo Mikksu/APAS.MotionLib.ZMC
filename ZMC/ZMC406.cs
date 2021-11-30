@@ -839,64 +839,45 @@ namespace APAS.MotionLib.ZMC
             int rtn = zmcaux.ZAux_Direct_GetAxisStopReason(_hMc, axisIndex, ref reason);
             CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Direct_GetAxisStopReason));
             string statueErrorInfo = string.Empty;
-            switch (reason)
-            {
-                case 0:
-                    return;
-                case 0x2:
-                    statueErrorInfo = "随动误差超限报警";
-                    break;
-                case 0x4:
-                    statueErrorInfo = "与远程轴通讯错误";
-                    break;
-                case 0x8:
-                    statueErrorInfo = "远程驱动器报错";
-                    break;
-                case 0x10:
-                    statueErrorInfo = "正向硬限位";
-                    break;
-                case 0x20:
-                    statueErrorInfo = "反向硬限位";
-                    break;
-                case 0x80:
-                    statueErrorInfo = "随动误差超限报警";
-                    break;
-                case 0x40:
-                    statueErrorInfo = "回原点中";
-                    break;
-                case 0x100:
-                    statueErrorInfo = "随动误差超限出错";
-                    break;
-                case 0x200:
-                    statueErrorInfo = "超过正向软限位";
-                    break;
-                case 0x400:
-                    statueErrorInfo = "超过负向软限位";
-                    break;
-                case 0x800:
-                    statueErrorInfo = "CANCLE执行中";
-                    break;
-                case 0x1000:
-                    statueErrorInfo = "脉冲频率操过MAX_SPEED限制";
-                    break;
-                case 0x4000:
-                    statueErrorInfo = "机械手指令坐标错误";
-                    break;
-                case 0x40000:
-                    statueErrorInfo = "电源异常";
-                    break;
-                case 0x200000:
-                    statueErrorInfo = "运动中触发特殊运动指令失败";
-                    break;
-                case 0x400000:
-                    statueErrorInfo = "报警信号输入";
-                    break;
-                case 0x800000:
-                    statueErrorInfo = "轴进入暂停状态";
-                    break;
-            }
 
-            throw new Exception($"{axisIndex} 号轴状态异常，{statueErrorInfo}");
+            if (reason == 0)
+                return;
+            else if((reason & 0x2) > 0)
+                statueErrorInfo = "随动误差超限报警";
+            else if ((reason & 0x4) > 0)
+                statueErrorInfo = "与远程轴通讯错误";
+            else if ((reason & 0x8) > 0)
+                statueErrorInfo = "远程驱动器报错";
+            else if ((reason & 0x10) > 0)
+                statueErrorInfo = "正向硬限位";
+            else if ((reason & 0x20) > 0)
+                statueErrorInfo = "反向硬限位";
+            else if ((reason & 0x40) > 0)
+                statueErrorInfo = "回原点中";
+            else if ((reason & 0x80) > 0)
+                statueErrorInfo = "随动误差超限报警";
+            else if ((reason & 0x100) > 0)
+                statueErrorInfo = "随动误差超限出错";
+            else if ((reason & 0x200) > 0)
+                statueErrorInfo = "超过正向软限位";
+            else if ((reason & 0x400) > 0)
+                statueErrorInfo = "超过负向软限位";
+            else if ((reason & 0x800) > 0)
+                statueErrorInfo = "CANCLE执行中";
+            else if ((reason & 0x1000) > 0)
+                statueErrorInfo = "脉冲频率操过MAX_SPEED限制";
+            else if ((reason & 0x4000) > 0)
+                statueErrorInfo = "机械手指令坐标错误";
+            else if ((reason & 0x40000) > 0)
+                statueErrorInfo = "电源异常";
+            else if ((reason & 0x200000) > 0)
+                statueErrorInfo = "运动中触发特殊运动指令失败";
+            else if ((reason & 0x400000) > 0)
+                statueErrorInfo = "报警信号输入";
+            else if ((reason & 0x800000) > 0)
+                statueErrorInfo = "轴进入暂停状态";
+
+            throw new Exception($"轴[{axisIndex}]运行异常，错误代码(0x{reason:X})，{statueErrorInfo}");
         }
 
         private void ReadParamFile(string filePath, ref McConfig cardParam)
@@ -1052,6 +1033,9 @@ namespace APAS.MotionLib.ZMC
             ResetFault(targetAxis);
             ServoOn(targetAxis);
             Home(targetAxis, 100000, 10000);
+
+            Move(targetAxis, 100000, -10000);
+
             SetAcceleration(targetAxis, 1000000);
             SetDeceleration(targetAxis, 5000000);
             Move(targetAxis, 100000, 200000);
