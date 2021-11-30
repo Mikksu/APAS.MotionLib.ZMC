@@ -1,16 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading;
-using APAS__MotionControl;
-using APAS__MotionControl.Core;
-using log4net;
-using cszmcaux;
-using System.IO;
-using Newtonsoft.Json;
-using System.Runtime.CompilerServices;
-using System.Linq;
+﻿using APAS.McLib.Sdk;
+using APAS.McLib.Sdk.Core;
 using APAS.MotionLib.ZMC.Configuration;
+using cszmcaux;
+using log4net;
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 /*
@@ -233,7 +233,7 @@ namespace APAS.MotionLib.ZMC
 
             CommandRtnCheck(rtn, "ZAux_Direct_Single_Move ");
 
-            Thread.Sleep(100);
+            //Thread.Sleep(100);
             float position = 0;
 
             do
@@ -247,7 +247,7 @@ namespace APAS.MotionLib.ZMC
                 RaiseAxisStateUpdatedEvent(new AxisStatusArgs(axis, (double)position));
                 Thread.Sleep(50);
             } while (axisMoveStatus == 0);
-            Thread.Sleep(100);
+            //Thread.Sleep(100);
 
             AxisStatueCheck(_hMc, 0);
 
