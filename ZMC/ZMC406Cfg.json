@@ -1,10 +1,10 @@
 {
 	"Scope": {
 		"InvtervalMs": 10,
-		"mmInvtervalMs": "²ÉÑùÊ±¼ä¼ä¸ô£¬µ¥Î»ms",
+		"mmInvtervalMs": "é‡‡æ ·æ—¶é—´é—´éš”ï¼Œå•ä½ms",
 		"Deepth": 10000,
-		"mmDeepth1": "DeepthÎª²ÉÑùÉî¶È£¬¸ÃÖµ½öÓÃÓÚÔ¼Êø×î´ó²ÉÑùµãÊý£¬Êµ¼ÊµÄ²ÉÑùµãÊýÓëËÙ¶ÈºÍÔË¶¯¾àÀëÏà¹Ø",
-		"mmDeepth2": "Fast1DËã·¨ÖÐÊµ¼ÊÐèÒªµÄ»º³åÇøÊýÁ¿ÎªDeepth*2»òDeepth*3¸ö£¬Òò´Ë¸ÃÖµ²»Ó¦³¬¹ý Öá¿¨×î´ó»º³åÇø³¤¶È/3"
+		"mmDeepth1": "Deepthä¸ºé‡‡æ ·æ·±åº¦ï¼Œè¯¥å€¼ä»…ç”¨äºŽçº¦æŸæœ€å¤§é‡‡æ ·ç‚¹æ•°ï¼Œå®žé™…çš„é‡‡æ ·ç‚¹æ•°ä¸Žé€Ÿåº¦å’Œè¿åŠ¨è·ç¦»ç›¸å…³",
+		"mmDeepth2": "Fast1Dç®—æ³•ä¸­å®žé™…éœ€è¦çš„ç¼“å†²åŒºæ•°é‡ä¸ºDeepth*2æˆ–Deepth*3ä¸ªï¼Œå› æ­¤è¯¥å€¼ä¸åº”è¶…è¿‡ è½´å¡æœ€å¤§ç¼“å†²åŒºé•¿åº¦/3"
 	},
 		"AIN": {
 			"IndexStart": 32,
@@ -38,8 +38,8 @@
 				"InvertStep":6,
 				"ResetIo": 0,
 				"Home": {
-					"Mode": 14,
-					"mmMode":"²½½øÇý¶¯Æ÷Ö»ÄÜÓÃ14£¬ÒòÎªÆäZÏàÐÅºÅÊä³öÎªµ¥¶ËÄ£Ê½¡£",
+					"Mode": 16,
+					"mmMode":"æ­¥è¿›é©±åŠ¨å™¨åªèƒ½ç”¨14ï¼Œå› ä¸ºå…¶Zç›¸ä¿¡å·è¾“å‡ºä¸ºå•ç«¯æ¨¡å¼ã€‚",
 					"OrgIo": 2,
 					"OrgIoInv":  false,
 					"PelIo": 3,

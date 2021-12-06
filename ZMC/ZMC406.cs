@@ -95,11 +95,10 @@ namespace APAS.MotionLib.ZMC
 
             //TODO 4.需要完成函数 ChildUpdateStatus()，否则会报NotImplementException异常。
 
-            var rtn = zmcaux.ZAux_SearchEth(PortName, 100);
-
-            CommandRtnCheck(rtn, "ZAux_SearchEth");
+           /* var rtn = zmcaux.ZAux_SearchEth(PortName, 100);
+            CommandRtnCheck(rtn, "ZAux_SearchEth");*/
             
-            rtn = zmcaux.ZAux_OpenEth(PortName, out _hMc);
+            var rtn = zmcaux.ZAux_OpenEth(PortName, out _hMc);
             CommandRtnCheck(rtn, "ZAux_OpenEth");
 
             // 检查轴卡型号并更新轴总数
