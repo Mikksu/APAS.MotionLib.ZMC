@@ -8,10 +8,12 @@ Watches=0
 [FileList]
 File1=ZMIO300_ADDA_Init.bas
 FileType1=1
-AutoRun1=0
+AutoRun1=-1
 File2=Init.bas
 FileType2=1
-AutoRun2=1
+AutoRun2=0
 [OpenList]
 OpenFile1=ZMIO300_ADDA_Init.bas
 OpenLine1=0
+OpenFile2=Init.bas
+OpenLine2=0

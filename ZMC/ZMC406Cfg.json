@@ -8,7 +8,34 @@
 	},
 		"AIN": {
 			"IndexStart": 32,
-			"MaxChannel": 4
+			"MaxChannel": 4,
+			"Param":
+			[
+				{
+					"Channel": 0,
+					"RangeUpperMv": 5,
+					"RangeLowMv": 0,
+					"MaxScale":65535
+				},
+				{
+					"Channel": 1,
+					"RangeUpperMv": 5,
+					"RangeLowMv": 0,
+					"MaxScale":65535
+				},
+				{
+					"Channel": 2,
+					"RangeUpperMv": 5,
+					"RangeLowMv": 0,
+					"MaxScale":65535
+				},
+				{
+					"Channel": 3,
+					"RangeUpperMv": 5,
+					"RangeLowMv": 0,
+					"MaxScale":65535
+				}
+			]
 		},
 		"Axes": [
 			{

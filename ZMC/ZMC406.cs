@@ -497,7 +497,9 @@ namespace APAS.MotionLib.ZMC
 			{
                 float val = 0.0f;
                 zmcaux.ZAux_Direct_GetAD(_hMc, _mcConfig.Ain.IndexStart + i, ref val);
-                values.Add((double)val);
+
+                var param = _mcConfig.Ain.Param.FirstOrDefault(x=>x.Channel == i);
+                values.Add(ConvertAdcRawToRealworld(param, val));
             }
 
             return values;
@@ -512,7 +514,8 @@ namespace APAS.MotionLib.ZMC
         {
             float val = 0.0f;
             zmcaux.ZAux_Direct_GetAD(_hMc, _mcConfig.Ain.IndexStart + port, ref val);
-            return (double)val;
+            var param = _mcConfig.Ain.Param.FirstOrDefault(x => x.Channel == port);
+            return ConvertAdcRawToRealworld(param, val);
         }
 
         /// <summary>
@@ -615,6 +618,10 @@ namespace APAS.MotionLib.ZMC
 
             var respon = new StringBuilder();
 
+            // 从配置文件中读取参数，以将ADC回读值转换为真实值
+            var adcParam1 = _mcConfig.Ain.Param.FirstOrDefault(x => x.Channel == analogCapture);
+            var adcParam2 = _mcConfig.Ain.Param.FirstOrDefault(x => x.Channel == analogCapture2);
+
             // 总采样点数，注意此值必须为2的倍数
             var totalSamplingPoints = _mcConfig.Scope.Deepth * (analogCapture2 < 0 ? 2 : 3);
             /*if (totalSamplingPoints < 30000)
@@ -667,10 +674,10 @@ namespace APAS.MotionLib.ZMC
             
             for (var i = 0; i < pCnt; i++)
             {
-                point2Ds1.Add(new Point2D(pBufX[i], pBufY1[i]));
+                point2Ds1.Add(new Point2D(pBufX[i], ConvertAdcRawToRealworld(adcParam1, pBufY1[i])));
 
                 if (analogCapture2 >= 0)
-                    point2Ds2.Add(new Point2D(pBufX[i], pBufX[i]));
+                    point2Ds2.Add(new Point2D(pBufX[i], ConvertAdcRawToRealworld(adcParam1, pBufY2[i])));
             }
 
             var distinctItems1 = point2Ds1.GroupBy(p => p.X).Select(p => p.First()).OrderBy(p => p.X);
@@ -1023,6 +1030,20 @@ namespace APAS.MotionLib.ZMC
                         break;
                 }
             });
+        }
+
+        private double ConvertAdcRawToRealworld(AnalogInParamConfig param, double adcRaw)
+        {
+            if (param == null)
+                return adcRaw;
+
+            if(param.RangeLowMv >= param.RangeUpperMv)
+                return adcRaw; 
+
+            if(param.MaxScale <= 0)
+                return adcRaw;
+
+            return (adcRaw / param.MaxScale) * (param.RangeUpperMv - param.RangeLowMv);
         }
 
 
