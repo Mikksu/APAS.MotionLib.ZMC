@@ -1,5 +1,6 @@
 ﻿using APAS.McLib.Sdk;
 using APAS.McLib.Sdk.Core;
+using APAS.McLib.Sdk.Exceptions;
 using APAS.MotionLib.ZMC.Configuration;
 using cszmcaux;
 using log4net;
@@ -871,7 +872,8 @@ namespace APAS.MotionLib.ZMC
             else if ((reason & 0x400) > 0)
                 statueErrorInfo = "超过负向软限位";
             else if ((reason & 0x800) > 0)
-                statueErrorInfo = "CANCLE执行中";
+                //statueErrorInfo = "CANCLE执行中";
+                throw new StoppedByUserException();
             else if ((reason & 0x1000) > 0)
                 statueErrorInfo = "脉冲频率操过MAX_SPEED限制";
             else if ((reason & 0x4000) > 0)
