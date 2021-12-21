@@ -165,10 +165,10 @@ namespace APAS.MotionLib.ZMC
             SetDeceleration(axis, homeParam.Dec);
 
             rtn = zmcaux.ZAux_Direct_SetCreep(_hMc, axis, (float)creepSpeed);
-            CommandRtnCheck(rtn, "ZAux_Direct_SetCreep ");
+            CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Direct_SetCreep));
 
             rtn = zmcaux.ZAux_Direct_SetSpeed(_hMc, axis, (float)hiSpeed);
-            CommandRtnCheck(rtn, "ZAux_Direct_SetSpeed ");
+            CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Direct_SetSpeed));
 
             rtn = zmcaux.ZAux_Direct_Single_Datum(_hMc, axis, homeParam.Mode);
             CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Direct_Single_Datum));
@@ -178,14 +178,14 @@ namespace APAS.MotionLib.ZMC
             do
             {
                 rtn=zmcaux.ZAux_Direct_GetIfIdle(_hMc, axis, ref axisMoveStatus);
-                CommandRtnCheck(rtn, "ZAux_Direct_GetIfIdle ");
+                CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Direct_GetIfIdle));
 
                 rtn = zmcaux.ZAux_Direct_GetMpos(_hMc, axis, ref position);
-                CommandRtnCheck(rtn, "ZAux_Direct_GetMpos ");
+                CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Direct_GetMpos));
 
-                RaiseAxisStateUpdatedEvent(new AxisStatusArgs(axis, (double)position));
+                RaiseAxisStateUpdatedEvent(new AxisStatusArgs(axis, position));
 
-                Thread.Sleep(50);
+                Thread.Sleep(10);
             } while (axisMoveStatus == 0);
 
             Thread.Sleep(100);
@@ -245,7 +245,7 @@ namespace APAS.MotionLib.ZMC
                 CommandRtnCheck(rtn, "ZAux_Direct_GetMpos ");
 
                 RaiseAxisStateUpdatedEvent(new AxisStatusArgs(axis, (double)position));
-                Thread.Sleep(50);
+                Thread.Sleep(10);
             } while (axisMoveStatus == 0);
             //Thread.Sleep(100);
 
@@ -291,7 +291,7 @@ namespace APAS.MotionLib.ZMC
                 CommandRtnCheck(rtn, "ZAux_Direct_GetMpos ");
 
                 RaiseAxisStateUpdatedEvent(new AxisStatusArgs(axis, (double)pos));
-                Thread.Sleep(50);
+                Thread.Sleep(10);
             } while (axisMoveStatus == 0);
             Thread.Sleep(100);
 
@@ -722,14 +722,10 @@ namespace APAS.MotionLib.ZMC
 
         }
 
-		protected override void ChildEmergencyStop()
-		{
-            int rtn;
-            for (var i = 0; i < AxisCount; i++)
-            {
-                rtn = zmcaux.ZAux_Direct_Single_Cancel(_hMc, i, 3);
-                //CommandRtnCheck(rtn, "ZAux_Direct_Single_Cancel");
-            }
+        protected override void ChildEmergencyStop()
+        {
+            var rtn = zmcaux.ZAux_Direct_Rapidstop(_hMc, 2);
+            CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Direct_Rapidstop));
         }
 
         /// <summary>
@@ -840,15 +836,21 @@ namespace APAS.MotionLib.ZMC
 
         private void AxisStatueCheck(IntPtr cardHandle, int axisIndex)
         {
+            // 检查急停
+            if (CheckEmbStatus())
+                throw new Exception($"紧急停止");
+
+            // 若非急停，检查轴状态
             int reason = 0;
+            string statueErrorInfo = string.Empty;
+
             //int rtn = zmcaux.ZAux_Direct_GetAxisStatus(_hMc, axisIndex, ref reason);
             int rtn = zmcaux.ZAux_Direct_GetAxisStopReason(_hMc, axisIndex, ref reason);
             CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Direct_GetAxisStopReason));
-            string statueErrorInfo = string.Empty;
 
             if (reason == 0)
                 return;
-            else if((reason & 0x2) > 0)
+            else if ((reason & 0x2) > 0)
                 statueErrorInfo = "随动误差超限报警";
             else if ((reason & 0x4) > 0)
                 statueErrorInfo = "与远程轴通讯错误";
@@ -999,6 +1001,10 @@ namespace APAS.MotionLib.ZMC
                     throw new Exception($"轴[{axis}]未使能。");
             }
 
+            // 检查急停开关是否被按下
+            if (CheckEmbStatus())
+                throw new Exception($"急停开关未释放。");
+
             // 清除AXIS_STOPREASON
             SendBasicCommand($"AXIS_STOPREASON({axis})=0");
         }
@@ -1011,6 +1017,22 @@ namespace APAS.MotionLib.ZMC
 
             return param;
 		}
+
+        /// <summary>
+        /// 检查急停开关是否被按下
+        /// </summary>
+        /// <returns></returns>
+        private bool CheckEmbStatus()
+        {
+            var respon = new StringBuilder();
+            var ret = zmcaux.ZAux_Execute(_hMc, "?IsEMBPressed", respon, 100);
+            CommandRtnCheck(ret, nameof(CheckEmbStatus));
+
+            if (int.TryParse(respon.ToString(), out var status))
+                return status == 0 ? false : true;
+            else
+                throw new Exception($"检查急停开关状态时错误，返回值{respon}格式错误。");
+        }
 
         private void StartBackgroundTask()
         {
@@ -1054,7 +1076,7 @@ namespace APAS.MotionLib.ZMC
             ServoOn(targetAxis);
             Home(targetAxis, 100000, 10000);
 
-            Move(targetAxis, 100000, -10000);
+            Move(targetAxis, 1000000, 10000);
 
             SetAcceleration(targetAxis, 1000000);
             SetDeceleration(targetAxis, 5000000);
