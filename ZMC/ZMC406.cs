@@ -109,8 +109,12 @@ namespace APAS.MotionLib.ZMC
             else if (model.StartsWith("412"))
                 AxisCount = 12;
 
+            // 如果上次程序没有退出，可能还有正在运动的轴，
+            // 先执行一次急停，确保左右轴均处于停止状态；否则下面的ChildServoOn异常。
+            ChildEmergencyStop();
+
             ApplyConfig(_hMc, _mcConfig);
-            
+
             // Servo On 所有轴
             for (var i = 0; i < AxisCount; i++)
                 ChildServoOn(i);
@@ -188,7 +192,9 @@ namespace APAS.MotionLib.ZMC
                 rtn = zmcaux.ZAux_Direct_GetMpos(_hMc, axis, ref position);
                 CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Direct_GetMpos));
 
-                RaiseAxisStateUpdatedEvent(new AxisStatusArgs(axis, position));
+                // 背景线程中同时也在刷新绝对坐标，此处可以不刷新；
+                // 增加该行代码可提高UI上刷新坐标的速度。
+                // RaiseAxisStateUpdatedEvent(new AxisStatusArgs(axis, position));
 
                 Thread.Sleep(10);
             } while (axisMoveStatus == 0);
@@ -249,6 +255,8 @@ namespace APAS.MotionLib.ZMC
                 rtn = zmcaux.ZAux_Direct_GetMpos(_hMc, axis, ref position);
                 CommandRtnCheck(rtn, "ZAux_Direct_GetMpos ");
 
+                // 背景线程中同时也在刷新绝对坐标，此处可以不刷新；
+                // 增加该行代码可提高UI上刷新坐标的速度。
                 RaiseAxisStateUpdatedEvent(new AxisStatusArgs(axis, (double)position));
                 Thread.Sleep(10);
             } while (axisMoveStatus == 0);
@@ -743,7 +751,7 @@ namespace APAS.MotionLib.ZMC
             Thread.Sleep(1000);
 
             // 停止所有轴运动。
-            EmergencyStop();
+            ChildEmergencyStop();
 
             var rtn = zmcaux.ZAux_Close(_hMc);
             CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Close));

@@ -11,7 +11,7 @@ namespace APAS.MotionLib.ZMC.Tests
 		public void UnitTestTest()
 		{
 			var mc = new ZMC_406("192.168.0.11", 0, ",ZMC406Cfg.json");
-			mc.UnitTest(1);
+			mc.UnitTest(0);
 
 			/*var t1 = Task.Run(() =>
 			{
