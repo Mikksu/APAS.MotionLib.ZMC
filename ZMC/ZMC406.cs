@@ -165,6 +165,10 @@ namespace APAS.MotionLib.ZMC
             SetAcceleration(axis, homeParam.Acc);
             SetDeceleration(axis, homeParam.Dec);
 
+            // 将该轴标记为未Home
+            rtn = zmcaux.ZAux_Modbus_Set0x(_hMc, (ushort)axis, 1, new byte[] { 0 });
+            CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Modbus_Set0x));
+
             rtn = zmcaux.ZAux_Direct_SetCreep(_hMc, axis, (float)creepSpeed);
             CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Direct_SetCreep));
 
@@ -738,8 +742,11 @@ namespace APAS.MotionLib.ZMC
             _cts?.Cancel();
             Thread.Sleep(1000);
 
+            // 停止所有轴运动。
+            EmergencyStop();
+
             var rtn = zmcaux.ZAux_Close(_hMc);
-            CommandRtnCheck(rtn, "ZAux_Close");
+            CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Close));
         }
 
         /// <summary>
