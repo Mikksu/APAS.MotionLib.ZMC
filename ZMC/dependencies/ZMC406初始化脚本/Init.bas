@@ -46,9 +46,9 @@ SUB AxisInit()
 	INVERT_IN(24,ON) 		'Disble the ALM signal
 	INVERT_IN(25,ON) 		'Disble the ALM signal
 	INVERT_IN(26,ON) 		'Disble the ALM signal
-	INVERT_IN(27,OFF) 
-	INVERT_IN(28,OFF) 
-	INVERT_IN(29,OFF) 
+	INVERT_IN(27,ON) 
+	INVERT_IN(28,ON) 
+	INVERT_IN(29,ON) 
 
 	'定义ALM信号使用的Input管脚
 	ALM_IN(0)=24
