@@ -42,17 +42,11 @@
     <Reference Include="APAS.Interface, Version=1.1.0.1, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\APAS.Interface.1.1.0.1\lib\net461\APAS.Interface.dll</HintPath>
     </Reference>
-    <Reference Include="APAS.McLib.Sdk, Version=1.1.0.12, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\APAS.McLib.Sdk.1.1.0.12\lib\net48\APAS.McLib.Sdk.dll</HintPath>
+    <Reference Include="APAS.McLib.Sdk, Version=1.1.2.14, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\APAS.McLib.Sdk.1.1.2.14\lib\net48\APAS.McLib.Sdk.dll</HintPath>
     </Reference>
-    <Reference Include="APAS__Interface, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\APAS__Interface.1.0.0\lib\net461\APAS__Interface.dll</HintPath>
-    </Reference>
-    <Reference Include="APAS__MotionControl, Version=1.0.10.11, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\APAS__MotionControl.1.0.10.11\lib\net48\APAS__MotionControl.dll</HintPath>
-    </Reference>
-    <Reference Include="log4net, Version=2.0.13.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
-      <HintPath>..\packages\log4net.2.0.13\lib\net45\log4net.dll</HintPath>
+    <Reference Include="log4net, Version=2.0.11.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
+      <HintPath>..\packages\log4net.2.0.11\lib\net45\log4net.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.TestPlatform.TestFramework, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\MSTest.TestFramework.2.1.1\lib\net45\Microsoft.VisualStudio.TestPlatform.TestFramework.dll</HintPath>

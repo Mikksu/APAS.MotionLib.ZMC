@@ -956,7 +956,7 @@ namespace APAS.MotionLib.ZMC
                     CommandRtnCheck(rtn, "ZAux_Direct_SetUnits in LoadParam Function");
                 }
 
-                if (cfg.Home.OrgIo > -1)
+                if (cfg.Home.OrgIo >= -1)
                 {
                     rtn = zmcaux.ZAux_Direct_SetDatumIn(cardHandle, cfg.Index, cfg.Home.OrgIo);
                     CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Direct_SetDatumIn));
@@ -965,7 +965,7 @@ namespace APAS.MotionLib.ZMC
                     CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Direct_SetInvertIn));
                 }
 
-                if (cfg.Home.PelIo > -1)
+                if (cfg.Home.PelIo >= -1)
                 {
                     rtn = zmcaux.ZAux_Direct_SetFwdIn(cardHandle, cfg.Index, cfg.Home.PelIo);
                     CommandRtnCheck(rtn, "ZAux_Direct_SetFwdIn in LoadParam Function");
@@ -974,12 +974,12 @@ namespace APAS.MotionLib.ZMC
                     CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Direct_SetInvertIn));
                 }
 
-                if (cfg.Home.NelIo > -1)
+                if (cfg.Home.NelIo >= -1)
                 {
                     rtn = zmcaux.ZAux_Direct_SetRevIn(cardHandle, cfg.Index, cfg.Home.NelIo);
                     CommandRtnCheck(rtn, "ZAux_Direct_SetFwdIn in LoadParam Function");
 
-                    rtn = zmcaux.ZAux_Direct_SetInvertIn(cardHandle, cfg.Home.PelIo, cfg.Home.NelIoInv ? 1 : 0);
+                    rtn = zmcaux.ZAux_Direct_SetInvertIn(cardHandle, cfg.Home.NelIo, cfg.Home.NelIoInv ? 1 : 0);
                     CommandRtnCheck(rtn, nameof(zmcaux.ZAux_Direct_SetInvertIn));
                 }
             }
